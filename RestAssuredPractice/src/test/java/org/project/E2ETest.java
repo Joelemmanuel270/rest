@@ -11,20 +11,19 @@ import io.restassured.response.Response;
 import static io.restassured.RestAssured.*;
 
 public class E2ETest {
-	String username="joelemmamuel07@gmail.com";
+	String username="priyamagesan6316@gmail.com";
 	String baseUrl="https://www.shoppersstack.com/shopping";
 	String token;
 	int userId;
-	int addressId;
+	int AddressId;
 	int productId;
-	
-	
+	long a=4000l;
 	
 	@Test
 	private void login() {
 		ShopperLogin s=new ShopperLogin();
 		s.setEmail(username);
-		s.setPassword("Password@123");
+		s.setPassword("Burgman@6316");
 		s.setRole("SHOPPER");
 		
 		Response post = given().body(s).contentType(ContentType.JSON)
@@ -39,6 +38,7 @@ public class E2ETest {
 		userId = post.jsonPath().get("data.userId");
 		token = post.jsonPath().get("data.jwtToken");
 		token="Bearer "+token;
+		System.out.println("Login done successfully and generated the token");
 		
 	}
 	
@@ -49,15 +49,17 @@ public class E2ETest {
 				.when().get(baseUrl+"/products/alpha");
 		
 		response.then().assertThat().statusCode(200);
-		productId=response.jsonPath().get("data[327].productId");
-		System.out.println(productId);
+		response.then().assertThat().time(Matchers.lessThan(a));
+		productId=response.jsonPath().get("data[1].productId");
+		System.out.println("got a productId :" +productId);
 		
 	}
+	
 	
 	@Test(dependsOnMethods = "login")
 	public void addAddress() {
 		Address as=new Address();
-		as.setBuildingInfo("n0.5");
+		as.setBuildingInfo("no.5");
 		as.setCity("Thane");
 		as.setCountry("India");
 		as.setLandmark("park");
@@ -72,10 +74,73 @@ public class E2ETest {
 								.header("Authorization",token)
 								.pathParam("shopperId", userId)
 						.when().post(baseUrl+"/shoppers/{shopperId}/address");
+		
+		
+		post.then().statusCode(201);
+		post.then().assertThat().time(Matchers.lessThan(a));
+		
+		AddressId = post.jsonPath().get("data.addressId");
+		System.out.println("New Address has created successfully :" +AddressId);
+			
+	}
 	
+	@Test(dependsOnMethods="login")
+	public void getalladdresses()
+	{
+		Response response = given().header("Authorization",token).pathParam("shopperId",userId)
+		.when().get(baseUrl+"/shoppers/{shopperId}/address");
+		
+		response.then().assertThat().statusCode(200);
+		response.then().assertThat().time(Matchers.lessThan(a));
+				
 		
 	}
-	//data.name
+	
+	@Test(dependsOnMethods="addAddress")
+	public void getspecificaddress()
+	{
+	 
+		Response body = given().header("Authorization",token)
+				.pathParam("shopperId",userId).pathParam("addressId",AddressId)
+		        .when().get(baseUrl+"/shoppers/{shopperId}/address/{addressId}");
+		
+		body.then().statusCode(200);
+		body.then().assertThat().time(Matchers.lessThan(a));
+		System.out.println("Got a particular address");	
+	
+   }
+	
+	@Test(dependsOnMethods = "addAddress")
+	public void updateaddress()
+	{
+		
+		updateAddress s=new updateAddress();
+		s.setBuildingInfo("no.10");
+		s.setCity("pune");
+		s.setCountry("Indiaa");
+		s.setLandmark("park1");
+		s.setName("priyaa");
+		s.setPhone("82646498837");
+		s.setState("bangaloree");
+		s.setPincode("560010");
+		s.setType("Home");
+		s.setStreetInfo("lilly street");
+		
+		Response body = given().body(s).contentType(ContentType.JSON).header("Authorization",token)
+				.pathParam("shopperId",userId).pathParam("addressId", AddressId)
+		        .when().put(baseUrl+"/shoppers/{shopperId}/address/{addressId}");
+		
+		body.then().statusCode(200);
+		//body.then().assertThat().time(Matchers.lessThan(a));
+		
+		
+		
+		  
+		
+		
+		
+	}
+	
 	
 	
 }
